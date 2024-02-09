@@ -1,0 +1,3 @@
+/Users/nissiragland/Documents/CRT/Static-Fire/build/CMakeFiles/solid.dir
+/Users/nissiragland/Documents/CRT/Static-Fire/build/CMakeFiles/edit_cache.dir
+/Users/nissiragland/Documents/CRT/Static-Fire/build/CMakeFiles/rebuild_cache.dir
