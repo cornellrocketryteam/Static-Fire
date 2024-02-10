@@ -1,9 +1,6 @@
 # Build directory
 build/
 
-# Data directory
-data/
-
 # Doxygen output directory
 docs/
 
