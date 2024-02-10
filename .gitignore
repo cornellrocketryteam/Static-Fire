@@ -1,0 +1,14 @@
+# Build directory
+build/
+
+# Data directory
+data/
+
+# Doxygen output directory
+docs/
+
+# macOS
+**/.DS_Store
+
+# VS Code
+.vscode/
