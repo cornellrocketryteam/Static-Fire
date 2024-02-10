@@ -1,9 +1,6 @@
 # Build directory
 build/
 
-# Doxygen output directory
-docs/
-
 # macOS
 **/.DS_Store
 
