@@ -1,5 +1,5 @@
 /**
- * stream_data.cpp: config and stream from multiple AIN channels
+ * main.cpp: Streams data from the LabJack and logs to a .csv file.
  **/
 
 #include "LJMStreamUtil.hpp"
@@ -18,7 +18,7 @@ void HardcodedConfigureStream(int handle);
 int main()
 {
     int handle;
-    double INIT_SCAN_RATE = 70;
+    double INIT_SCAN_RATE = 100;
     int SCANS_PER_READ = (int)INIT_SCAN_RATE / 2;
     const int NUM_READS = 10;
     enum
