@@ -3,11 +3,8 @@
  * Desc: Provides some basic helper functions for stream applications
  **/
 
-// #ifndef LJM_STREAM_UTILITIES
-// #define LJM_STREAM_UTILITIES
-
-#include "LJM_Utilities.h"
-#include <stdlib.h>
+#ifndef LJM_STREAM_UTILITIES
+#define LJM_STREAM_UTILITIES
 
 /**
  * Enables logging for stream purposes
@@ -95,4 +92,4 @@ void PrintAndLog(const char *outputString, ...);
 void PrintAndLog(const char *outputString, ...);
 #endif
 
-// #endif // #define LJM_STREAM_UTILITIES
+#endif // #define LJM_STREAM_UTILITIES

@@ -15,8 +15,6 @@ add_compile_options(
 )
 # Add source files from src/
 set(SOURCES
-    src/LJM_Utilities.cpp
-    src/LJM_StreamUtilities.cpp
     src/main.cpp
 )
 
@@ -25,6 +23,6 @@ add_executable(${PROJECT_NAME}
     ${SOURCES}
 )
 
-target_include_directories(solid PRIVATE ${CMAKE_SOURCE_DIR} /usr/local/include)
-target_link_directories(solid PRIVATE /usr/local/lib)
-target_link_libraries(solid PRIVATE LabJackM)
+add_subdirectory(lib)
+
+target_link_libraries(${PROJECT_NAME} ${LJM_LIBRARY})

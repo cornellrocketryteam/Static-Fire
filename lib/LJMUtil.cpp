@@ -16,7 +16,8 @@
 #include <unistd.h> // For sleep() (with Mac OS or Linux).
 #endif
 
-#include "LJM_Utilities.h"
+#include "LJMUtil.hpp"
+// #include "LJM_Utilities.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,19 +31,137 @@
 #define INITIAL_ERR_ADDRESS -2
 // This is just something negative so normal addresses are not confused with it
 
-void CouldNotRead(int err, const char *valueName);
-void ErrorCheck(int err, const char *formattedDescription, ...);
-void ErrorCheckWithAddress(int err, int errAddress, const char *description,
-                           ...);
-void MillisecondSleep(unsigned int milliseconds);
-int IsNetwork(int connectionType);
-void PrintDeviceInfo(int deviceType, int connectionType, int serialNumber,
-                     int ipAddressInt, int portOrPipe, int MaxBytesPerMB);
-int WriteName(int handle, const char *name, double value);
-int WriteNames(int handle, int NumFrames, const char **aNames,
-               const double *aValues, int *errorAddress);
+typedef enum {
+    ACTION_PRINT_AND_EXIT,
+    ACTION_PRINT
+} ErrorAction;
+
+void PrintErrorAddressHelper(int errAddress) {
+    if (!(errAddress < 0))
+        printf("\terror address: %d\n", errAddress);
+}
+
+void MillisecondSleep(unsigned int milliseconds) {
+#ifdef _WIN32
+    Sleep(milliseconds);
+#else
+    usleep(milliseconds * 1000);
+#endif
+}
+
+void WaitForUserIfWindows() {
+#ifdef _WIN32
+#ifndef AUTOMATED_TEST
+    WaitForUser();
+#endif
+#endif
+}
 
 // Source
+
+// The "internal" print function for ErrorCheck and ErrorCheckWithAddress
+void _ErrorCheckWithAddress(int err, int errAddress, ErrorAction action,
+                            const char *description, va_list args) {
+    char errName[LJM_MAX_NAME_SIZE];
+    LJM_ErrorToString(err, errName);
+    if (err >= LJME_WARNINGS_BEGIN && err <= LJME_WARNINGS_END) {
+        vfprintf(stdout, description, args);
+        printf(" warning: \"%s\" (Warning code: %d)\n", errName, err);
+        PrintErrorAddressHelper(errAddress);
+    } else if (err != LJME_NOERROR) {
+        vfprintf(stdout, description, args);
+        printf(" error: \"%s\" (ErrorCode: %d)\n", errName, err);
+        PrintErrorAddressHelper(errAddress);
+
+        if (action == ACTION_PRINT_AND_EXIT) {
+            printf("Closing all devices and exiting now\n");
+            MillisecondSleep(100); // Allow the debug logger to finish output.
+            WaitForUserIfWindows();
+            LJM_CloseAll();
+            exit(err);
+        }
+    }
+}
+
+void PrintErrorIfError(int err, const char *formattedDescription, ...) {
+    va_list args;
+
+    va_start(args, formattedDescription);
+    _ErrorCheckWithAddress(err, INITIAL_ERR_ADDRESS, ACTION_PRINT,
+                           formattedDescription, args);
+    va_end(args);
+}
+
+void PrintErrorWithAddressIfError(int err, int errAddress,
+                                  const char *formattedDescription, ...) {
+    va_list args;
+
+    va_start(args, formattedDescription);
+    _ErrorCheckWithAddress(err, errAddress, ACTION_PRINT,
+                           formattedDescription, args);
+    va_end(args);
+}
+
+void ErrorCheck(int err, const char *formattedDescription, ...) {
+    va_list args;
+
+    va_start(args, formattedDescription);
+    _ErrorCheckWithAddress(err, INITIAL_ERR_ADDRESS, ACTION_PRINT_AND_EXIT,
+                           formattedDescription, args);
+    va_end(args);
+}
+
+void ErrorCheckWithAddress(int err, int errAddress, const char *description,
+                           ...) {
+    va_list args;
+
+    va_start(args, description);
+    _ErrorCheckWithAddress(err, errAddress, ACTION_PRINT_AND_EXIT, description,
+                           args);
+    va_end(args);
+}
+
+void CouldNotRead(int err, const char *valueName) {
+    char errString[LJM_MAX_NAME_SIZE];
+    LJM_ErrorToString(err, errString);
+    printf("Could not read %s. Error was %s (%d)\n", valueName, errString, err);
+}
+
+int IsTCP(int connectionType) {
+    if (connectionType == LJM_ctTCP ||
+        connectionType == LJM_ctETHERNET ||
+        connectionType == LJM_ctWIFI) {
+        return 1;
+    }
+    return 0;
+}
+
+int IsUDP(int connectionType) {
+    if (connectionType == LJM_ctNETWORK_UDP ||
+        connectionType == LJM_ctETHERNET_UDP ||
+        connectionType == LJM_ctWIFI_UDP) {
+        return 1;
+    }
+    return 0;
+}
+
+int IsNetwork(int connectionType) {
+    if (IsTCP(connectionType) ||
+        IsUDP(connectionType) ||
+        connectionType == LJM_ctNETWORK_ANY ||
+        connectionType == LJM_ctETHERNET_ANY ||
+        connectionType == LJM_ctWIFI_ANY) {
+        return 1;
+    }
+    return 0;
+}
+
+int WriteName(int handle, const char *name, double value) {
+    int err = LJM_eWriteName(handle, name, value);
+    PrintErrorIfError(err, "LJM_eWriteName(Handle=%d, Name=%s, Value=%f)",
+                      handle, name, value);
+    return err;
+}
 
 const char *NumberToDebugLogMode(int mode) {
     static const char *LJM_DEBUG_LOG_MODE_NEVER_STRING =
@@ -127,20 +246,6 @@ int GetDeviceType(int handle) {
     return deviceType;
 }
 
-void PrintDeviceInfoFromHandle(int handle) {
-    int DeviceType, ConnectionType, SerialNumber, IPAddress, Port,
-        MaxBytesPerMB;
-
-    int err = LJM_GetHandleInfo(handle, &DeviceType, &ConnectionType,
-                                &SerialNumber, &IPAddress, &Port, &MaxBytesPerMB);
-
-    ErrorCheckWithAddress(err, INITIAL_ERR_ADDRESS,
-                          "PrintDeviceInfoFromHandle (LJM_GetHandleInfo)");
-
-    PrintDeviceInfo(DeviceType, ConnectionType, SerialNumber, IPAddress, Port,
-                    MaxBytesPerMB);
-}
-
 void PrintDeviceInfo(int deviceType, int connectionType, int serialNumber,
                      int ipAddressInt, int portOrPipe, int packetMaxBytes) {
     char ipAddressString[LJM_IPv4_STRING_SIZE];
@@ -165,12 +270,18 @@ void PrintDeviceInfo(int deviceType, int connectionType, int serialNumber,
            packetMaxBytes);
 }
 
-void WaitForUserIfWindows() {
-#ifdef _WIN32
-#ifndef AUTOMATED_TEST
-    WaitForUser();
-#endif
-#endif
+void PrintDeviceInfoFromHandle(int handle) {
+    int DeviceType, ConnectionType, SerialNumber, IPAddress, Port,
+        MaxBytesPerMB;
+
+    int err = LJM_GetHandleInfo(handle, &DeviceType, &ConnectionType,
+                                &SerialNumber, &IPAddress, &Port, &MaxBytesPerMB);
+
+    ErrorCheckWithAddress(err, INITIAL_ERR_ADDRESS,
+                          "PrintDeviceInfoFromHandle (LJM_GetHandleInfo)");
+
+    PrintDeviceInfo(DeviceType, ConnectionType, SerialNumber, IPAddress, Port,
+                    MaxBytesPerMB);
 }
 
 void WaitForUser() {
@@ -201,86 +312,6 @@ int OpenSOrDie(const char *deviceType, const char *connectionType,
 void CloseOrDie(int handle) {
     int err = LJM_Close(handle);
     ErrorCheck(err, "LJM_Close(%d)", handle);
-}
-
-void PrintErrorAddressHelper(int errAddress) {
-    if (!(errAddress < 0))
-        printf("\terror address: %d\n", errAddress);
-}
-
-typedef enum {
-    ACTION_PRINT_AND_EXIT,
-    ACTION_PRINT
-} ErrorAction;
-
-// The "internal" print function for ErrorCheck and ErrorCheckWithAddress
-void _ErrorCheckWithAddress(int err, int errAddress, ErrorAction action,
-                            const char *description, va_list args) {
-    char errName[LJM_MAX_NAME_SIZE];
-    LJM_ErrorToString(err, errName);
-    if (err >= LJME_WARNINGS_BEGIN && err <= LJME_WARNINGS_END) {
-        vfprintf(stdout, description, args);
-        printf(" warning: \"%s\" (Warning code: %d)\n", errName, err);
-        PrintErrorAddressHelper(errAddress);
-    } else if (err != LJME_NOERROR) {
-        vfprintf(stdout, description, args);
-        printf(" error: \"%s\" (ErrorCode: %d)\n", errName, err);
-        PrintErrorAddressHelper(errAddress);
-
-        if (action == ACTION_PRINT_AND_EXIT) {
-            printf("Closing all devices and exiting now\n");
-            MillisecondSleep(100); // Allow the debug logger to finish output.
-            WaitForUserIfWindows();
-            LJM_CloseAll();
-            exit(err);
-        }
-    }
-}
-
-void PrintErrorIfError(int err, const char *formattedDescription, ...) {
-    va_list args;
-
-    va_start(args, formattedDescription);
-    _ErrorCheckWithAddress(err, INITIAL_ERR_ADDRESS, ACTION_PRINT,
-                           formattedDescription, args);
-    va_end(args);
-}
-
-void PrintErrorWithAddressIfError(int err, int errAddress,
-                                  const char *formattedDescription, ...) {
-    va_list args;
-
-    va_start(args, formattedDescription);
-    _ErrorCheckWithAddress(err, errAddress, ACTION_PRINT,
-                           formattedDescription, args);
-    va_end(args);
-}
-
-void ErrorCheck(int err, const char *formattedDescription, ...) {
-    va_list args;
-
-    va_start(args, formattedDescription);
-    _ErrorCheckWithAddress(err, INITIAL_ERR_ADDRESS, ACTION_PRINT_AND_EXIT,
-                           formattedDescription, args);
-    va_end(args);
-}
-
-void ErrorCheckWithAddress(int err, int errAddress, const char *description,
-                           ...) {
-    va_list args;
-
-    va_start(args, description);
-    _ErrorCheckWithAddress(err, errAddress, ACTION_PRINT_AND_EXIT, description,
-                           args);
-    va_end(args);
-}
-
-void MillisecondSleep(unsigned int milliseconds) {
-#ifdef _WIN32
-    Sleep(milliseconds);
-#else
-    usleep(milliseconds * 1000);
-#endif
 }
 
 double Get(int handle, const char *valueName) {
@@ -399,19 +430,21 @@ void SetConfigString(const char *configParameter, const char *string) {
                       configParameter, string);
 }
 
+int WriteNames(int handle, int NumFrames, const char **aNames,
+               const double *aValues, int *errorAddress) {
+    int err = LJM_eWriteNames(handle, NumFrames, aNames, aValues, errorAddress);
+    PrintErrorWithAddressIfError(err, *errorAddress,
+                                 "LJM_eWriteNames(Handle=%d, NumFrames=%d, aNames=[%s, ...], aValues=[%f, ...], ...)",
+                                 handle, NumFrames, aNames[0], aValues[0]);
+    return err;
+}
+
 void WriteNameOrDie(int handle, const char *name, double value) {
     int err = WriteName(handle, name, value);
     if (err) {
         WaitForUserIfWindows();
         exit(err);
     }
-}
-
-int WriteName(int handle, const char *name, double value) {
-    int err = LJM_eWriteName(handle, name, value);
-    PrintErrorIfError(err, "LJM_eWriteName(Handle=%d, Name=%s, Value=%f)",
-                      handle, name, value);
-    return err;
 }
 
 void WriteNameAltTypeOrDie(int handle, const char *name, int type,
@@ -434,15 +467,6 @@ void WriteNamesOrDie(int handle, int NumFrames, const char **aNames,
         WaitForUserIfWindows();
         exit(err);
     }
-}
-
-int WriteNames(int handle, int NumFrames, const char **aNames,
-               const double *aValues, int *errorAddress) {
-    int err = LJM_eWriteNames(handle, NumFrames, aNames, aValues, errorAddress);
-    PrintErrorWithAddressIfError(err, *errorAddress,
-                                 "LJM_eWriteNames(Handle=%d, NumFrames=%d, aNames=[%s, ...], aValues=[%f, ...], ...)",
-                                 handle, NumFrames, aNames[0], aValues[0]);
-    return err;
 }
 
 void WriteNameArrayOrDie(int handle, const char *name, int numValues,
@@ -485,12 +509,6 @@ void ReadNameByteArrayOrDie(int handle, const char *name, int numBytes,
                           numBytes);
 }
 
-void CouldNotRead(int err, const char *valueName) {
-    char errString[LJM_MAX_NAME_SIZE];
-    LJM_ErrorToString(err, errString);
-    printf("Could not read %s. Error was %s (%d)\n", valueName, errString, err);
-}
-
 void EnableLoggingLevel(double logLevel) {
  // Warning: These calls may change
     ErrorCheck(
@@ -522,35 +540,6 @@ int EqualFloats(double v1, double v2, double delta) {
     }
 
     return 0; // False
-}
-
-int IsTCP(int connectionType) {
-    if (connectionType == LJM_ctTCP ||
-        connectionType == LJM_ctETHERNET ||
-        connectionType == LJM_ctWIFI) {
-        return 1;
-    }
-    return 0;
-}
-
-int IsUDP(int connectionType) {
-    if (connectionType == LJM_ctNETWORK_UDP ||
-        connectionType == LJM_ctETHERNET_UDP ||
-        connectionType == LJM_ctWIFI_UDP) {
-        return 1;
-    }
-    return 0;
-}
-
-int IsNetwork(int connectionType) {
-    if (IsTCP(connectionType) ||
-        IsUDP(connectionType) ||
-        connectionType == LJM_ctNETWORK_ANY ||
-        connectionType == LJM_ctETHERNET_ANY ||
-        connectionType == LJM_ctWIFI_ANY) {
-        return 1;
-    }
-    return 0;
 }
 
 int DoesDeviceHaveWiFi(int handle) {

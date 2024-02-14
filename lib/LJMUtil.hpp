@@ -5,29 +5,24 @@
 
 #ifndef LJM_UTILITIES
 #define LJM_UTILITIES
-#include <time.h> // For timestamp info
-
-#ifdef _WIN32
-#include <Winsock2.h>
-#include <ws2tcpip.h>
-#else
-#include <arpa/inet.h>  // For inet_ntoa()
-#include <sys/time.h>
-#include <unistd.h> // For sleep() (with Mac OS or Linux).
-#endif
-
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <LabJackM.h>
 
 #define COMMAND 1
 #define RESPONSE 0
 
 #define INITIAL_ERR_ADDRESS -2
 // This is just something negative so normal addresses are not confused with it
+
+void CouldNotRead(int err, const char *valueName);
+void ErrorCheck(int err, const char *formattedDescription, ...);
+void ErrorCheckWithAddress(int err, int errAddress, const char *description,
+                           ...);
+void MillisecondSleep(unsigned int milliseconds);
+int IsNetwork(int connectionType);
+void PrintDeviceInfo(int deviceType, int connectionType, int serialNumber,
+                     int ipAddressInt, int portOrPipe, int MaxBytesPerMB);
+int WriteName(int handle, const char *name, double value);
+int WriteNames(int handle, int NumFrames, const char **aNames,
+               const double *aValues, int *errorAddress);
 
 // Prompts the user to press enter
 void WaitForUser();
@@ -196,7 +191,7 @@ const char *NumberToDebugLogMode(int mode);
 /**
  * Desc: Returns the current CPU time in milliseconds
  **/
-LJM_LONG_LONG_RETURN GetCurrentTimeMS();
+// LJM_LONG_LONG_RETURN GetCurrentTimeMS();
 
 /**
  * Desc: Returns IPv4String in integer form, handling error by calling

@@ -6,8 +6,13 @@
 #ifndef LJM_STREAM_UTILITIES
 #define LJM_STREAM_UTILITIES
 
-#include "LJM_StreamUtilities.h"
-#include "LJM_Utilities.h"
+#include "LJMStreamUtil.hpp"
+#include "LJMUtil.hpp"
+
+#include <LabJackM.h>
+// #include "LJM_StreamUtilities.hpp"
+// #include "LJM_Utilities.hpp"
+#include <stdio.h>
 #include <stdlib.h>
 
 // Limit how many scans should be printed for each call to PrintScans

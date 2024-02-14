@@ -2,9 +2,11 @@
  * stream_data.cpp: config and stream from multiple AIN channels
  **/
 
-#include "LJM_StreamUtilities.h"
+#include "LJMStreamUtil.hpp"
+#include "LJMUtil.hpp"
 #include <LabJackM.h>
 #include <fstream>
+#include <iostream>
 #include <stdio.h>
 #include <string.h>
 
@@ -75,7 +77,8 @@ void Stream(int handle, int numChannels, const char **channelNames,
     unsigned int aDataSize = numChannels * scansPerRead;
     double *aData = new double[sizeof(double) * aDataSize];
 
-    std::ofstream file("test_data.csv");
+    std::ofstream file;
+    file.open("test_data.csv", std::ios::out | std::ios::app);
 
     err = LJM_GetHandleInfo(handle, NULL, &connectionType, NULL, NULL, NULL, NULL);
     ErrorCheck(err, "LJM_GetHandleInfo");
