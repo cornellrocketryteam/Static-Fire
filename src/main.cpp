@@ -10,6 +10,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <chrono>
+#include <ctime>
+#include <iomanip>
+
 void Stream(int handle, int numChannels, const char **channelNames,
             double scanRate, int scansPerRead);
 
@@ -116,6 +120,13 @@ void Stream(int handle, int numChannels, const char **channelNames,
         }
         printf("\n");
         printf("  1st scan out of %d:\n", scansPerRead);
+
+        auto now = std::chrono::system_clock::now();
+        time_t rawtime = std::chrono::system_clock::to_time_t(now);
+        std::tm *local_time;
+        local_time = localtime(&rawtime);
+        file << std::put_time(local_time, "%F %T") << ", ";
+
         for (channel = 0; channel < numChannels; channel++)
         {
             printf("    %s = %0.5f\n", channelNames[channel], aData[channel]);
