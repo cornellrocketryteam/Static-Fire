@@ -11,7 +11,7 @@
 #include <string.h>
 
 void Stream(int handle, int numChannels, const char **channelNames,
-            double scanRate, int scansPerRead, int numReads);
+            double scanRate, int scansPerRead);
 
 void HardcodedConfigureStream(int handle);
 
@@ -20,7 +20,6 @@ int main()
     int handle;
     double INIT_SCAN_RATE = 100;
     int SCANS_PER_READ = (int)INIT_SCAN_RATE / 2;
-    const int NUM_READS = 10;
     enum
     {
         NUM_CHANNELS = 2
@@ -34,8 +33,7 @@ int main()
     PrintDeviceInfoFromHandle(handle);
     printf("\n");
 
-    Stream(handle, NUM_CHANNELS, CHANNEL_NAMES, INIT_SCAN_RATE, SCANS_PER_READ,
-           NUM_READS);
+    Stream(handle, NUM_CHANNELS, CHANNEL_NAMES, INIT_SCAN_RATE, SCANS_PER_READ);
 
     CloseOrDie(handle);
     WaitForUserIfWindows();
@@ -64,9 +62,9 @@ void HardcodedConfigureStream(int handle)
 }
 
 void Stream(int handle, int numChannels, const char **channelNames,
-            double scanRate, int scansPerRead, int numReads)
+            double scanRate, int scansPerRead)
 {
-    int err, iteration, channel;
+    int err, channel;
     int deviceScanBacklog = 0;
     int LJMScanBacklog = 0;
     unsigned int receiveBufferBytesSize = 0;
@@ -100,11 +98,7 @@ void Stream(int handle, int numChannels, const char **channelNames,
            scanRate, scanRate * numChannels);
     printf("\n");
 
-    // Read the scans
-    printf("Now performing %d reads\n", numReads);
-    printf("\n");
-    // change to while + delete numReads and NUM_READS
-    for (iteration = 0; iteration < numReads; iteration++)
+    while (true)
     {
         err = LJM_eStreamRead(handle, aData, &deviceScanBacklog,
                               &LJMScanBacklog);
@@ -126,11 +120,11 @@ void Stream(int handle, int numChannels, const char **channelNames,
         {
             printf("    %s = %0.5f\n", channelNames[channel], aData[channel]);
             file << aData[channel] << ", ";
+            file.flush();
         }
 
         file << "\n";
     }
-
     file.close();
 
     printf("Stopping stream\n");
