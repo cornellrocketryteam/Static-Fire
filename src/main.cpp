@@ -9,6 +9,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <string.h>
+#include <signal.h>
 
 #include <chrono>
 #include <ctime>
@@ -43,6 +44,13 @@ int main()
     WaitForUserIfWindows();
 
     return LJME_NOERROR;
+}
+
+bool interrupted = false;
+
+void signalHandler(int signum)
+{
+    interrupted = true;
 }
 
 void HardcodedConfigureStream(int handle)
@@ -102,7 +110,9 @@ void Stream(int handle, int numChannels, const char **channelNames,
            scanRate, scanRate * numChannels);
     printf("\n");
 
-    while (true)
+    signal(SIGINT, signalHandler);
+
+    while (!interrupted)
     {
         err = LJM_eStreamRead(handle, aData, &deviceScanBacklog,
                               &LJMScanBacklog);
@@ -136,6 +146,7 @@ void Stream(int handle, int numChannels, const char **channelNames,
 
         file << "\n";
     }
+    file << "\n";
     file.close();
 
     printf("Stopping stream\n");
