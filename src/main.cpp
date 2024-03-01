@@ -1,5 +1,5 @@
 /**
- * main.cpp: Streams data from the LabJack and logs to a .csv file.
+ * main.cpp: Streams data from the LabJack T7 and logs to a CSV file.
  **/
 
 #include "LJMStreamUtil.hpp"
