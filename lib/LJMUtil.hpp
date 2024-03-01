@@ -1,6 +1,6 @@
 /**
- * Name: LJM_Utilities.h
- * Desc: Provides some basic helper functions
+ * LJMUtil.cpp: provides some basic helper functions.
+ * Modified from https://github.com/labjack/C_CPP_LJM/blob/develop/LJM_Utilities.h
  **/
 
 #ifndef LJM_UTILITIES

@@ -1,6 +1,6 @@
 /**
- * Name: LJM_StreamUtilities.c
- * Desc: Provides some basic helper functions for stream applications
+ * LJMStreamUtil.hpp: provides some basic helper functions for stream applications.
+ * Modified from https://github.com/labjack/C_CPP_LJM/blob/develop/LJM_StreamUtilities.h
  **/
 
 #ifndef LJM_STREAM_UTILITIES

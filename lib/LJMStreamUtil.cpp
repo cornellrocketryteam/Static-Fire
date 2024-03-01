@@ -1,6 +1,6 @@
 /**
- * Name: LJM_StreamUtilities.c
- * Desc: Provides some basic helper functions for stream applications
+ * LJMStreamUtil.cpp: provides some basic helper functions for stream applications.
+ * Modified from https://github.com/labjack/C_CPP_LJM/blob/develop/LJM_StreamUtilities.h
  **/
 
 #ifndef LJM_STREAM_UTILITIES
@@ -10,24 +10,35 @@
 #include "LJMUtil.hpp"
 
 #include <LabJackM.h>
-// #include "LJM_StreamUtilities.hpp"
-// #include "LJM_Utilities.hpp"
 #include <stdio.h>
 #include <stdlib.h>
 
 // Limit how many scans should be printed for each call to PrintScans
-enum { MAX_SCANS_TO_PRINT = 4 };
+enum
+{
+    MAX_SCANS_TO_PRINT = 4
+};
 
 // STREAM_OUT#(0:3)_LOOP_SIZE
-enum { SET_LOOP_USE_NEW_DATA_IMMEDIATELY = 1 };
-enum { SET_LOOP_WAIT_FOR_SYNCH = 2 };
-enum { SET_LOOP_SYNCH = 3 };
+enum
+{
+    SET_LOOP_USE_NEW_DATA_IMMEDIATELY = 1
+};
+enum
+{
+    SET_LOOP_WAIT_FOR_SYNCH = 2
+};
+enum
+{
+    SET_LOOP_SYNCH = 3
+};
 
 // Source
 
 void PrintScans(int numScans, int numChannels, const char **channelNames,
                 const int *channelAddresses, int deviceScanBacklog, int LJMScanBacklog,
-                int iteration, double *aData) {
+                int iteration, double *aData)
+{
     int scanI, chanI;
     int numSkippedScans = 0;
     const int MAX_NUM = MAX_SCANS_TO_PRINT;
@@ -37,24 +48,34 @@ void PrintScans(int numScans, int numChannels, const char **channelNames,
     unsigned short temp;
     unsigned char *bytes;
 
-    for (chanI = 0; chanI < numChannels; chanI++) {
-        if (channelAddresses[chanI] < 1000) {
+    for (chanI = 0; chanI < numChannels; chanI++)
+    {
+        if (channelAddresses[chanI] < 1000)
+        {
             formatString = "%10s%14s";
-        } else {
+        }
+        else
+        {
             formatString = "%10s%24s";
         }
         printf(formatString, channelNames[chanI], "");
     }
     printf("\n");
 
-    for (scanI = 0; scanI < maxScansPerChannel * numChannels; scanI += numChannels) {
-        for (chanI = 0; chanI < numChannels; chanI++) {
-            if (aData[scanI + chanI] == LJM_DUMMY_VALUE) {
+    for (scanI = 0; scanI < maxScansPerChannel * numChannels; scanI += numChannels)
+    {
+        for (chanI = 0; chanI < numChannels; chanI++)
+        {
+            if (aData[scanI + chanI] == LJM_DUMMY_VALUE)
+            {
                 ++numSkippedScans;
             }
-            if (channelAddresses[chanI] < 1000) {
+            if (channelAddresses[chanI] < 1000)
+            {
                 printf("aData[%3d]: %+.05f    ", scanI + chanI, aData[scanI + chanI]);
-            } else {
+            }
+            else
+            {
                 temp = (unsigned short)aData[scanI + chanI];
                 bytes = (unsigned char *)&temp;
                 printf("aData[%3d]: 0x ", scanI + chanI);
@@ -65,13 +86,15 @@ void PrintScans(int numScans, int numChannels, const char **channelNames,
         printf("\n");
     }
 
-    if (limitScans) {
+    if (limitScans)
+    {
         printf("%d scans were omitted from this output.\n", numScans - MAX_NUM);
     }
 }
 
 void PrintStreamConclusion(unsigned int timeStart, unsigned int timeEnd, int numReads,
-                           int scansPerRead, int numChannels, int totalSkippedScans) {
+                           int scansPerRead, int numChannels, int totalSkippedScans)
+{
     double msPerRead = ((double)timeEnd - timeStart) / numReads;
 
     printf("\nFinished:\n\t%d iterations over approximately %d milliseconds\n",
@@ -79,13 +102,15 @@ void PrintStreamConclusion(unsigned int timeStart, unsigned int timeEnd, int num
     printf("\t%f ms/read\n", msPerRead);
     printf("\t%f ms/sample\n\n", msPerRead / (scansPerRead * numChannels));
 
-    if (totalSkippedScans) {
+    if (totalSkippedScans)
+    {
         printf("\n****** Total number of skipped scans: %d ******\n\n", totalSkippedScans);
     }
 }
 
-void SetupStreamDebugLogging() {
- // SetConfigString and SetConfigValue are defined in LJM_Utilities.h
+void SetupStreamDebugLogging()
+{
+    // SetConfigString and SetConfigValue are defined in LJM_Utilities.h
     SetConfigString(LJM_DEBUG_LOG_FILE, "default");
 
     SetConfigValue(LJM_DEBUG_LOG_FILE_MAX_SIZE, 123456789);
@@ -93,16 +118,19 @@ void SetupStreamDebugLogging() {
     SetConfigValue(LJM_DEBUG_LOG_MODE, LJM_DEBUG_LOG_MODE_CONTINUOUS);
 }
 
-int CalculateNumReads(int numSeconds, double scanRate, int scansPerRead) {
+int CalculateNumReads(int numSeconds, double scanRate, int scansPerRead)
+{
     int numReads = (int)(numSeconds * scanRate / scansPerRead);
-    if (numReads < 1) {
+    if (numReads < 1)
+    {
         numReads = 1;
     }
 
     return numReads;
 }
 
-void DisableStreamIfEnabled(int handle) {
+void DisableStreamIfEnabled(int handle)
+{
     double firmwareVersion;
     double enabled;
     static const char *name = "STREAM_ENABLE";
@@ -112,11 +140,13 @@ void DisableStreamIfEnabled(int handle) {
     int err = LJM_eReadName(handle, fwname, &firmwareVersion);
     ErrorCheck(err, "LJM_eReadName(Handle=%d, Name=%s, ...)", handle, fwname);
 
- // T7 FW 1.0024 and lower does not allow read of STREAM_ENABLE
-    if (GetDeviceType(handle) == LJM_dtT7 && firmwareVersion < 1.0025) {
+    // T7 FW 1.0024 and lower does not allow read of STREAM_ENABLE
+    if (GetDeviceType(handle) == LJM_dtT7 && firmwareVersion < 1.0025)
+    {
         printf("Forcing disable of stream for handle: %d\n", handle);
         err = LJM_eStreamStop(handle);
-        if (err != LJME_NOERROR && err != STREAM_NOT_RUNNING) {
+        if (err != LJME_NOERROR && err != STREAM_NOT_RUNNING)
+        {
             ErrorCheck(err, "LJM_eStreamStop(Handle=%d)", handle);
         }
         return;
@@ -125,22 +155,27 @@ void DisableStreamIfEnabled(int handle) {
     err = LJM_eReadName(handle, name, &enabled);
     ErrorCheck(err, "LJM_eReadName(Handle=%d, Name=%s, ...)", handle, name);
 
-    if ((int)enabled) {
+    if ((int)enabled)
+    {
         printf("Disabling stream for handle: %d\n", handle);
         err = LJM_eStreamStop(handle);
         PrintErrorIfError(err, "LJM_eStreamStop(Handle=%d)", handle);
     }
 }
 
-int CountAndOutputNumSkippedScans(int numInChannels, int scansPerRead, double *aData) {
+int CountAndOutputNumSkippedScans(int numInChannels, int scansPerRead, double *aData)
+{
     int j;
     int numSkippedSamples = 0;
-    for (j = 0; j < numInChannels * scansPerRead; j++) {
-        if (aData[j] == LJM_DUMMY_VALUE) {
+    for (j = 0; j < numInChannels * scansPerRead; j++)
+    {
+        if (aData[j] == LJM_DUMMY_VALUE)
+        {
             ++numSkippedSamples;
         }
     }
-    if (numSkippedSamples) {
+    if (numSkippedSamples)
+    {
         printf("****** %d data scans were placeholders for scans that were skipped ******\n",
                numSkippedSamples / numInChannels);
         printf("****** %.01f %% of the scans were skipped ******\n",
@@ -151,44 +186,53 @@ int CountAndOutputNumSkippedScans(int numInChannels, int scansPerRead, double *a
 }
 
 void OutputStreamIterationInfo(int iteration, int deviceScanBacklog, int deviceScanBacklogThreshold,
-                               int LJMScanBacklog, int LJMScanBacklogThreshold) {
+                               int LJMScanBacklog, int LJMScanBacklogThreshold)
+{
     printf("iteration: %d", iteration);
-    if (deviceScanBacklog > deviceScanBacklogThreshold) {
+    if (deviceScanBacklog > deviceScanBacklogThreshold)
+    {
         printf(", deviceScanBacklog: %d", deviceScanBacklog);
     }
-    if (LJMScanBacklog > LJMScanBacklogThreshold) {
+    if (LJMScanBacklog > LJMScanBacklogThreshold)
+    {
         printf(", LJMScanBacklog: %d", LJMScanBacklog);
     }
     printf("\n");
 }
 
-double CalculateSleepFactor(int scansPerRead, int LJMScanBacklog) {
+double CalculateSleepFactor(int scansPerRead, int LJMScanBacklog)
+{
     static const double DECREASE_TOTAL = 0.9;
     double portionScansReady = (double)LJMScanBacklog / scansPerRead;
-    if (portionScansReady > DECREASE_TOTAL) {
+    if (portionScansReady > DECREASE_TOTAL)
+    {
         return 0;
     }
     return (1 - portionScansReady) * DECREASE_TOTAL;
 }
 
-void VariableStreamSleep(int scansPerRead, int scanRate, int LJMScanBacklog) {
+void VariableStreamSleep(int scansPerRead, int scanRate, int LJMScanBacklog)
+{
     double sleepFactor = CalculateSleepFactor(scansPerRead, LJMScanBacklog);
     int sleepMS = (int)(sleepFactor * 1000 * scansPerRead / (double)scanRate);
-    if (sleepMS < 1) {
+    if (sleepMS < 1)
+    {
         return;
     }
     MillisecondSleep(sleepMS); // 1000 is to convert to milliseconds
 }
 
-void SetupExternalClockStream(int handle) {
+void SetupExternalClockStream(int handle)
+{
     printf("Setting up externally clocked stream\n");
     WriteNameOrDie(handle, "STREAM_CLOCK_SOURCE", 2);
     WriteNameOrDie(handle, "STREAM_EXTERNAL_CLOCK_DIVISOR", 1);
 }
 
-void EnableFIO0PulseOut(int handle, int pulseRate, int numPulses) {
- // Set FIO0 to do a 50% duty cycle
- // https://labjack.com/support/datasheets/t-series/digital-io/extended-features/pulse-out
+void EnableFIO0PulseOut(int handle, int pulseRate, int numPulses)
+{
+    // Set FIO0 to do a 50% duty cycle
+    // https://labjack.com/support/datasheets/t-series/digital-io/extended-features/pulse-out
 
     int rollValue = 10000000 /* 10 MHz */ / pulseRate;
 
@@ -208,12 +252,14 @@ void EnableFIO0PulseOut(int handle, int pulseRate, int numPulses) {
 }
 
 #ifdef LABJACK_DEBUG_LOG_OUTPUT
-void PrintAndLog(const char *outputString, ...) {
+void PrintAndLog(const char *outputString, ...)
+{
     char formattedString[256];
     va_list myArgs, logArgs;
     const char *logOutput = getenv("LABJACK_DEBUG_LOG_OUTPUT");
     va_start(myArgs, outputString);
-    if (logOutput != NULL && strcmp(logOutput, "1") == 0) {
+    if (logOutput != NULL && strcmp(logOutput, "1") == 0)
+    {
         va_copy(logArgs, myArgs);
         vsprintf(formattedString, outputString, logArgs);
         LJM_Log(LJM_DEBUG, formattedString);

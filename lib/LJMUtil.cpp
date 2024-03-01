@@ -1,6 +1,6 @@
 /**
- * Name: LJM_Utilities.h
- * Desc: Provides some basic helper functions
+ * LJMUtil.cpp: provides some basic helper functions.
+ * Modified from https://github.com/labjack/C_CPP_LJM/blob/develop/LJM_Utilities.h
  **/
 
 #ifndef LJM_UTILITIES
@@ -11,7 +11,7 @@
 #include <Winsock2.h>
 #include <ws2tcpip.h>
 #else
-#include <arpa/inet.h>  // For inet_ntoa()
+#include <arpa/inet.h> // For inet_ntoa()
 #include <sys/time.h>
 #include <unistd.h> // For sleep() (with Mac OS or Linux).
 #endif
@@ -31,17 +31,20 @@
 #define INITIAL_ERR_ADDRESS -2
 // This is just something negative so normal addresses are not confused with it
 
-typedef enum {
+typedef enum
+{
     ACTION_PRINT_AND_EXIT,
     ACTION_PRINT
 } ErrorAction;
 
-void PrintErrorAddressHelper(int errAddress) {
+void PrintErrorAddressHelper(int errAddress)
+{
     if (!(errAddress < 0))
         printf("\terror address: %d\n", errAddress);
 }
 
-void MillisecondSleep(unsigned int milliseconds) {
+void MillisecondSleep(unsigned int milliseconds)
+{
 #ifdef _WIN32
     Sleep(milliseconds);
 #else
@@ -49,7 +52,8 @@ void MillisecondSleep(unsigned int milliseconds) {
 #endif
 }
 
-void WaitForUserIfWindows() {
+void WaitForUserIfWindows()
+{
 #ifdef _WIN32
 #ifndef AUTOMATED_TEST
     WaitForUser();
@@ -61,19 +65,24 @@ void WaitForUserIfWindows() {
 
 // The "internal" print function for ErrorCheck and ErrorCheckWithAddress
 void _ErrorCheckWithAddress(int err, int errAddress, ErrorAction action,
-                            const char *description, va_list args) {
+                            const char *description, va_list args)
+{
     char errName[LJM_MAX_NAME_SIZE];
     LJM_ErrorToString(err, errName);
-    if (err >= LJME_WARNINGS_BEGIN && err <= LJME_WARNINGS_END) {
+    if (err >= LJME_WARNINGS_BEGIN && err <= LJME_WARNINGS_END)
+    {
         vfprintf(stdout, description, args);
         printf(" warning: \"%s\" (Warning code: %d)\n", errName, err);
         PrintErrorAddressHelper(errAddress);
-    } else if (err != LJME_NOERROR) {
+    }
+    else if (err != LJME_NOERROR)
+    {
         vfprintf(stdout, description, args);
         printf(" error: \"%s\" (ErrorCode: %d)\n", errName, err);
         PrintErrorAddressHelper(errAddress);
 
-        if (action == ACTION_PRINT_AND_EXIT) {
+        if (action == ACTION_PRINT_AND_EXIT)
+        {
             printf("Closing all devices and exiting now\n");
             MillisecondSleep(100); // Allow the debug logger to finish output.
             WaitForUserIfWindows();
@@ -83,7 +92,8 @@ void _ErrorCheckWithAddress(int err, int errAddress, ErrorAction action,
     }
 }
 
-void PrintErrorIfError(int err, const char *formattedDescription, ...) {
+void PrintErrorIfError(int err, const char *formattedDescription, ...)
+{
     va_list args;
 
     va_start(args, formattedDescription);
@@ -93,7 +103,8 @@ void PrintErrorIfError(int err, const char *formattedDescription, ...) {
 }
 
 void PrintErrorWithAddressIfError(int err, int errAddress,
-                                  const char *formattedDescription, ...) {
+                                  const char *formattedDescription, ...)
+{
     va_list args;
 
     va_start(args, formattedDescription);
@@ -102,7 +113,8 @@ void PrintErrorWithAddressIfError(int err, int errAddress,
     va_end(args);
 }
 
-void ErrorCheck(int err, const char *formattedDescription, ...) {
+void ErrorCheck(int err, const char *formattedDescription, ...)
+{
     va_list args;
 
     va_start(args, formattedDescription);
@@ -112,7 +124,8 @@ void ErrorCheck(int err, const char *formattedDescription, ...) {
 }
 
 void ErrorCheckWithAddress(int err, int errAddress, const char *description,
-                           ...) {
+                           ...)
+{
     va_list args;
 
     va_start(args, description);
@@ -121,49 +134,58 @@ void ErrorCheckWithAddress(int err, int errAddress, const char *description,
     va_end(args);
 }
 
-void CouldNotRead(int err, const char *valueName) {
+void CouldNotRead(int err, const char *valueName)
+{
     char errString[LJM_MAX_NAME_SIZE];
     LJM_ErrorToString(err, errString);
     printf("Could not read %s. Error was %s (%d)\n", valueName, errString, err);
 }
 
-int IsTCP(int connectionType) {
+int IsTCP(int connectionType)
+{
     if (connectionType == LJM_ctTCP ||
         connectionType == LJM_ctETHERNET ||
-        connectionType == LJM_ctWIFI) {
+        connectionType == LJM_ctWIFI)
+    {
         return 1;
     }
     return 0;
 }
 
-int IsUDP(int connectionType) {
+int IsUDP(int connectionType)
+{
     if (connectionType == LJM_ctNETWORK_UDP ||
         connectionType == LJM_ctETHERNET_UDP ||
-        connectionType == LJM_ctWIFI_UDP) {
+        connectionType == LJM_ctWIFI_UDP)
+    {
         return 1;
     }
     return 0;
 }
 
-int IsNetwork(int connectionType) {
+int IsNetwork(int connectionType)
+{
     if (IsTCP(connectionType) ||
         IsUDP(connectionType) ||
         connectionType == LJM_ctNETWORK_ANY ||
         connectionType == LJM_ctETHERNET_ANY ||
-        connectionType == LJM_ctWIFI_ANY) {
+        connectionType == LJM_ctWIFI_ANY)
+    {
         return 1;
     }
     return 0;
 }
 
-int WriteName(int handle, const char *name, double value) {
+int WriteName(int handle, const char *name, double value)
+{
     int err = LJM_eWriteName(handle, name, value);
     PrintErrorIfError(err, "LJM_eWriteName(Handle=%d, Name=%s, Value=%f)",
                       handle, name, value);
     return err;
 }
 
-const char *NumberToDebugLogMode(int mode) {
+const char *NumberToDebugLogMode(int mode)
+{
     static const char *LJM_DEBUG_LOG_MODE_NEVER_STRING =
         "LJM_DEBUG_LOG_MODE_NEVER";
     static const char *LJM_DEBUG_LOG_MODE_CONTINUOUS_STRING =
@@ -182,8 +204,10 @@ const char *NumberToDebugLogMode(int mode) {
     return unknown_string;
 }
 
-const char *NumberToConnectionType(int connectionType) {
-    switch (connectionType) {
+const char *NumberToConnectionType(int connectionType)
+{
+    switch (connectionType)
+    {
     case LJM_ctANY:
         return "LJM_ctANY";
     case LJM_ctUSB:
@@ -213,8 +237,10 @@ const char *NumberToConnectionType(int connectionType) {
     }
 }
 
-const char *NumberToDeviceType(int deviceType) {
-    switch (deviceType) {
+const char *NumberToDeviceType(int deviceType)
+{
+    switch (deviceType)
+    {
     case LJM_dtANY:
         return "LJM_dtANY";
     case LJM_dtT4:
@@ -239,7 +265,8 @@ const char *NumberToDeviceType(int deviceType) {
     }
 }
 
-int GetDeviceType(int handle) {
+int GetDeviceType(int handle)
+{
     int err, deviceType;
     err = LJM_GetHandleInfo(handle, &deviceType, NULL, NULL, NULL, NULL, NULL);
     ErrorCheck(err, "LJM_GetHandleInfo in GetDeviceType");
@@ -247,22 +274,27 @@ int GetDeviceType(int handle) {
 }
 
 void PrintDeviceInfo(int deviceType, int connectionType, int serialNumber,
-                     int ipAddressInt, int portOrPipe, int packetMaxBytes) {
+                     int ipAddressInt, int portOrPipe, int packetMaxBytes)
+{
     char ipAddressString[LJM_IPv4_STRING_SIZE];
 
- // Print
+    // Print
     printf("deviceType: %s\n", NumberToDeviceType(deviceType));
     printf("connectionType: %s\n", NumberToConnectionType(connectionType));
     printf("serialNumber: %d\n", serialNumber);
 
-    if (IsNetwork(connectionType)) {
+    if (IsNetwork(connectionType))
+    {
         LJM_NumberToIP(ipAddressInt, ipAddressString);
         printf("IP address: %s\n", ipAddressString);
     }
 
-    if (connectionType == LJM_ctUSB) {
+    if (connectionType == LJM_ctUSB)
+    {
         printf("pipe: %d\n", portOrPipe);
-    } else {
+    }
+    else
+    {
         printf("port: %d\n", portOrPipe);
     }
 
@@ -270,7 +302,8 @@ void PrintDeviceInfo(int deviceType, int connectionType, int serialNumber,
            packetMaxBytes);
 }
 
-void PrintDeviceInfoFromHandle(int handle) {
+void PrintDeviceInfoFromHandle(int handle)
+{
     int DeviceType, ConnectionType, SerialNumber, IPAddress, Port,
         MaxBytesPerMB;
 
@@ -284,15 +317,17 @@ void PrintDeviceInfoFromHandle(int handle) {
                     MaxBytesPerMB);
 }
 
-void WaitForUser() {
+void WaitForUser()
+{
     printf("Press enter to continue\n");
     getchar();
 
- // C++
- // std::cin.ignore();
+    // C++
+    // std::cin.ignore();
 }
 
-int OpenOrDie(int deviceType, int connectionType, const char *identifier) {
+int OpenOrDie(int deviceType, int connectionType, const char *identifier)
+{
     int handle, err;
     err = LJM_Open(deviceType, connectionType, identifier, &handle);
     ErrorCheck(err, "LJM_Open(%d, %d, %s, ...)", deviceType, connectionType,
@@ -301,7 +336,8 @@ int OpenOrDie(int deviceType, int connectionType, const char *identifier) {
 }
 
 int OpenSOrDie(const char *deviceType, const char *connectionType,
-               const char *identifier) {
+               const char *identifier)
+{
     int handle, err;
     err = LJM_OpenS(deviceType, connectionType, identifier, &handle);
     ErrorCheck(err, "LJM_OpenS(%s, %s, %s, ...)", deviceType, connectionType,
@@ -309,55 +345,73 @@ int OpenSOrDie(const char *deviceType, const char *connectionType,
     return handle;
 }
 
-void CloseOrDie(int handle) {
+void CloseOrDie(int handle)
+{
     int err = LJM_Close(handle);
     ErrorCheck(err, "LJM_Close(%d)", handle);
 }
 
-double Get(int handle, const char *valueName) {
+double Get(int handle, const char *valueName)
+{
     double value;
     int err;
 
     err = LJM_eReadName(handle, valueName, &value);
-    if (err != LJME_NOERROR) {
+    if (err != LJME_NOERROR)
+    {
         CouldNotRead(err, valueName);
     }
     return value;
 }
 
-double GetAndPrint(int handle, const char *valueName) {
+double GetAndPrint(int handle, const char *valueName)
+{
     double value;
     int err;
 
     err = LJM_eReadName(handle, valueName, &value);
-    if (err == LJME_NOERROR) {
+    if (err == LJME_NOERROR)
+    {
         printf("%s: %f\n", valueName, value);
-    } else {
+    }
+    else
+    {
         CouldNotRead(err, valueName);
     }
     return value;
 }
 
-void GetAndPrintIPAddress(int handle, const char *valueName) {
+void GetAndPrintIPAddress(int handle, const char *valueName)
+{
     double ip;
     char IP_STRING[LJM_IPv4_STRING_SIZE];
     int err;
 
     err = LJM_eReadName(handle, valueName, &ip);
-    if (err == LJME_NOERROR) {
+    if (err == LJME_NOERROR)
+    {
         err = LJM_NumberToIP((unsigned int)ip, IP_STRING);
         ErrorCheck(err, "Converting ip from device to a string");
         printf("%s: %s\n", valueName, IP_STRING);
-    } else {
+    }
+    else
+    {
         CouldNotRead(err, valueName);
     }
 }
 
 void GetAndPrintMACAddressFromValueAddress(int handle, const char *valueName,
-                                           int valueAddress) {
+                                           int valueAddress)
+{
     int err, byteI;
-    enum { NUM_BYTES = 8 };
-    enum { NUM_FRAMES = 1 };
+    enum
+    {
+        NUM_BYTES = 8
+    };
+    enum
+    {
+        NUM_FRAMES = 1
+    };
     double mac[NUM_BYTES];
     int aAddresses[NUM_FRAMES] = {valueAddress};
     int aTypes[NUM_FRAMES] = {LJM_BYTE};
@@ -367,14 +421,17 @@ void GetAndPrintMACAddressFromValueAddress(int handle, const char *valueName,
 
     err = LJM_eAddresses(handle, 1, aAddresses, aTypes, aWrites, aNumValues,
                          mac, &ErrorAddress);
-    if (err != LJME_NOERROR) {
+    if (err != LJME_NOERROR)
+    {
         CouldNotRead(err, valueName);
     }
 
     printf("%s: ", valueName);
-    for (byteI = 0; byteI < NUM_BYTES; byteI++) {
+    for (byteI = 0; byteI < NUM_BYTES; byteI++)
+    {
         printf("%02x", (unsigned int)mac[byteI]);
-        if (byteI < NUM_BYTES - 1) {
+        if (byteI < NUM_BYTES - 1)
+        {
             printf(":");
         }
     }
@@ -382,56 +439,71 @@ void GetAndPrintMACAddressFromValueAddress(int handle, const char *valueName,
 }
 
 void GetAndPrintAddressAndType(int handle, const char *valueDescription,
-                               int address, int type) {
+                               int address, int type)
+{
     double value;
     int err;
 
     err = LJM_eReadAddress(handle, address, type, &value);
-    if (err == LJME_NOERROR) {
+    if (err == LJME_NOERROR)
+    {
         printf("%s: %f\n", valueDescription, value);
-    } else {
+    }
+    else
+    {
         CouldNotRead(err, valueDescription);
     }
 }
 
-void GetAndPrintConfigValue(const char *configParameter) {
+void GetAndPrintConfigValue(const char *configParameter)
+{
     double value;
     int err;
 
     err = LJM_ReadLibraryConfigS(configParameter, &value);
-    if (err == LJME_NOERROR) {
+    if (err == LJME_NOERROR)
+    {
         printf("%s: %f\n", configParameter, value);
-    } else {
+    }
+    else
+    {
         CouldNotRead(err, configParameter);
     }
 }
 
-void GetAndPrintConfigString(const char *configParameter) {
+void GetAndPrintConfigString(const char *configParameter)
+{
     char string[LJM_MAX_NAME_SIZE];
     int err;
 
     err = LJM_ReadLibraryConfigStringS(configParameter, string);
-    if (err == LJME_NOERROR) {
+    if (err == LJME_NOERROR)
+    {
         printf("%s: %s\n", configParameter, string);
-    } else {
+    }
+    else
+    {
         CouldNotRead(err, configParameter);
     }
 }
 
-void SetConfigValue(const char *configParameter, double value) {
+void SetConfigValue(const char *configParameter, double value)
+{
     int err = LJM_WriteLibraryConfigS(configParameter, value);
     PrintErrorIfError(err, "[LJM_WriteLibraryConfigS(Parameter=%s, Value=%f)]",
                       configParameter, value);
 }
 
-void SetConfigString(const char *configParameter, const char *string) {
+void SetConfigString(const char *configParameter, const char *string)
+{
     int err = LJM_WriteLibraryConfigStringS(configParameter, string);
     PrintErrorIfError(err, "[LJM_WriteLibraryConfigS(Parameter=%s, String=%s)]",
                       configParameter, string);
 }
 
 int WriteNames(int handle, int NumFrames, const char **aNames,
-               const double *aValues, int *errorAddress) {
+               const double *aValues, int *errorAddress)
+{
     int err = LJM_eWriteNames(handle, NumFrames, aNames, aValues, errorAddress);
     PrintErrorWithAddressIfError(err, *errorAddress,
                                  "LJM_eWriteNames(Handle=%d, NumFrames=%d, aNames=[%s, ...], aValues=[%f, ...], ...)",
@@ -439,16 +511,19 @@ int WriteNames(int handle, int NumFrames, const char **aNames,
     return err;
 }
 
-void WriteNameOrDie(int handle, const char *name, double value) {
+void WriteNameOrDie(int handle, const char *name, double value)
+{
     int err = WriteName(handle, name, value);
-    if (err) {
+    if (err)
+    {
         WaitForUserIfWindows();
         exit(err);
     }
 }
 
 void WriteNameAltTypeOrDie(int handle, const char *name, int type,
-                           double value) {
+                           double value)
+{
     int address;
     int err = LJM_NameToAddress(name, &address, NULL);
     ErrorCheck(err, "WriteNameAltTypeOrDie: LJM_NameToAddress(Name=%s, ...)",
@@ -460,17 +535,20 @@ void WriteNameAltTypeOrDie(int handle, const char *name, int type,
 }
 
 void WriteNamesOrDie(int handle, int NumFrames, const char **aNames,
-                     const double *aValues) {
+                     const double *aValues)
+{
     int errorAddress = INITIAL_ERR_ADDRESS;
     int err = WriteNames(handle, NumFrames, aNames, aValues, &errorAddress);
-    if (err) {
+    if (err)
+    {
         WaitForUserIfWindows();
         exit(err);
     }
 }
 
 void WriteNameArrayOrDie(int handle, const char *name, int numValues,
-                         const double *aValues) {
+                         const double *aValues)
+{
     int errorAddress = INITIAL_ERR_ADDRESS;
     int err = LJM_eWriteNameArray(handle, name, numValues, aValues,
                                   &errorAddress);
@@ -480,7 +558,8 @@ void WriteNameArrayOrDie(int handle, const char *name, int numValues,
 }
 
 void WriteNameByteArrayOrDie(int handle, const char *name, int numBytes,
-                             const char *aBytes) {
+                             const char *aBytes)
+{
     int errorAddress = INITIAL_ERR_ADDRESS;
     int err = LJM_eWriteNameByteArray(handle, name, numBytes, aBytes,
                                       &errorAddress);
@@ -490,7 +569,8 @@ void WriteNameByteArrayOrDie(int handle, const char *name, int numBytes,
 }
 
 void ReadNameArrayOrDie(int handle, const char *name, int numValues,
-                        double *aValues) {
+                        double *aValues)
+{
     int errorAddress = INITIAL_ERR_ADDRESS;
     int err = LJM_eReadNameArray(handle, name, numValues, aValues,
                                  &errorAddress);
@@ -500,7 +580,8 @@ void ReadNameArrayOrDie(int handle, const char *name, int numValues,
 }
 
 void ReadNameByteArrayOrDie(int handle, const char *name, int numBytes,
-                            char *aBytes) {
+                            char *aBytes)
+{
     int errorAddress = INITIAL_ERR_ADDRESS;
     int err = LJM_eReadNameByteArray(handle, name, numBytes, aBytes,
                                      &errorAddress);
@@ -509,8 +590,9 @@ void ReadNameByteArrayOrDie(int handle, const char *name, int numBytes,
                           numBytes);
 }
 
-void EnableLoggingLevel(double logLevel) {
- // Warning: These calls may change
+void EnableLoggingLevel(double logLevel)
+{
+    // Warning: These calls may change
     ErrorCheck(
         LJM_WriteLibraryConfigS(LJM_DEBUG_LOG_MODE, 2.0),
         "Setting log mode to continuous");
@@ -522,11 +604,13 @@ void EnableLoggingLevel(double logLevel) {
         "Setting LJM_DEBUG_LOG_FILE_MAX_SIZE");
 }
 
-LJM_LONG_LONG_RETURN GetCurrentTimeMS() {
+LJM_LONG_LONG_RETURN GetCurrentTimeMS()
+{
     return LJM_GetHostTick() / 1000;
 }
 
-unsigned int IPToNumber(const char *IPv4String) {
+unsigned int IPToNumber(const char *IPv4String)
+{
     unsigned int number = 0;
     int err = LJM_IPToNumber(IPv4String, &number);
     ErrorCheck(err, "LJM_IPToNumber - %s", IPv4String);
@@ -534,35 +618,42 @@ unsigned int IPToNumber(const char *IPv4String) {
     return number;
 }
 
-int EqualFloats(double v1, double v2, double delta) {
-    if (v1 - v2 < delta && v2 - v1 < delta) {
+int EqualFloats(double v1, double v2, double delta)
+{
+    if (v1 - v2 < delta && v2 - v1 < delta)
+    {
         return 1; // True
     }
 
     return 0; // False
 }
 
-int DoesDeviceHaveWiFi(int handle) {
+int DoesDeviceHaveWiFi(int handle)
+{
     double hardwareInstalled = 0;
     int err = LJM_eReadName(handle, "HARDWARE_INSTALLED", &hardwareInstalled);
-    if (err != LJME_NOERROR) {
+    if (err != LJME_NOERROR)
+    {
         return 0;
     }
-    if (((int)hardwareInstalled) & 0x2) {
+    if (((int)hardwareInstalled) & 0x2)
+    {
         return 1;
     }
     return 0;
 }
 
-void DisplayDebugLoggingConfigurations() {
+void DisplayDebugLoggingConfigurations()
+{
     double mode;
     int err = LJM_ReadLibraryConfigS(LJM_DEBUG_LOG_MODE, &mode);
     ErrorCheck(err, "LJM_ReadLibraryConfigS(LJM_DEBUG_LOG_MODE, ...)");
     printf("LJM_DEBUG_LOG_MODE: %s\n", NumberToDebugLogMode((int)mode));
 
-    if ((int)mode != LJM_DEBUG_LOG_MODE_NEVER) {
-  // GetAndPrintConfigString and GetAndPrintConfigValue are defined in
-  // LJM_Utilities.h
+    if ((int)mode != LJM_DEBUG_LOG_MODE_NEVER)
+    {
+        // GetAndPrintConfigString and GetAndPrintConfigValue are defined in
+        // LJM_Utilities.h
         GetAndPrintConfigString(LJM_DEBUG_LOG_FILE);
 
         GetAndPrintConfigValue(LJM_DEBUG_LOG_FILE_MAX_SIZE);
@@ -570,7 +661,8 @@ void DisplayDebugLoggingConfigurations() {
     }
 }
 
-int GetAddressFromNameOrDie(const char *name) {
+int GetAddressFromNameOrDie(const char *name)
+{
     int address = -1;
     int err = LJM_NameToAddress(name, &address, NULL);
     ErrorCheck(err, "GetAddressFromNameOrDie > LJM_NameToAddress(%s, ...)",
@@ -578,19 +670,23 @@ int GetAddressFromNameOrDie(const char *name) {
     return address;
 }
 
-void PrintTimeStamp() {
+void PrintTimeStamp()
+{
     char timeBuff[70];
     time_t t = time(NULL);
     struct tm myTime;
 #ifdef _WIN32
     localtime_s(&myTime, &t);
 #else
-  // Could be changed to a thread safe version if supported
+    // Could be changed to a thread safe version if supported
     myTime = *localtime(&t);
 #endif
-    if (strftime(timeBuff, sizeof timeBuff, "%a %b %d %H:%M:%S %Y", &myTime)) {
+    if (strftime(timeBuff, sizeof timeBuff, "%a %b %d %H:%M:%S %Y", &myTime))
+    {
         fprintf(stdout, "%s ", timeBuff);
-    } else {
+    }
+    else
+    {
         fprintf(stdout, "strftime failed\n");
     }
 }
