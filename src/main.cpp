@@ -145,6 +145,8 @@ void Stream(int handle, int numChannels, const char **channelNames,
         }
 
         file << "\n";
+
+        // add clean interval thing? (https://github.com/labjack/C_CPP_LJM/blob/develop/more/ain/dual_ain_loop.c)
     }
     file << "\n";
     file.close();
