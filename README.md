@@ -4,7 +4,7 @@ Assists in static fire testing of our solid motor.
 
 ## Overview
 
-To support static fire tests, this project streams data from the LabJack T7 and logs it to a CSV file. In the current version, it streams from two analog pins to collect load cell and pressure transducer data. The code in ```main.cpp``` adapts example code from LabJack (https://github.com/labjack/C_CPP_LJM).
+To support static fire tests, this project streams data from the LabJack T7 and logs it to a CSV file. In the current version, it streams from two analog pins to collect load cell and pressure transducer data. The code in ```main.cpp``` adapts example code from LabJack (https://github.com/labjack/C_CPP_LJM), and the files in ```lib/``` are modified from some header files provided by the LJM library.
 
 ## Getting Started
 ### Dependencies Required
