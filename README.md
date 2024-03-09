@@ -11,6 +11,11 @@ To support static fire tests, this project streams data from the LabJack T7 and 
 * ```cmake```
 * ```LJM library``` (https://labjack.com/pages/support?doc=/software-driver/installer-downloads/ljm-software-installers-t4-t7-digit/)
 
+## Config
+* Pressure Transducer: AIN1
+* Load Cell: AIN2 with AIN3 as negative channel
+These AIN channels can be changed in ```CHANNEL_NAMES``` in ```main()``` and in ```aNames``` and ```aValues``` in ```HardcodedConfigureStream()```. 
+
 ## Running
 1. Create a top-level ```build/``` directory
 2. Run ```cmake ..``` from within ```build/```

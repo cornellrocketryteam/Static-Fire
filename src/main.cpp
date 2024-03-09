@@ -15,6 +15,8 @@
 #include <ctime>
 #include <iomanip>
 
+// PT: AIN1, LC: +AIN2, -AIN3
+
 void Stream(int handle, int numChannels, const char **channelNames,
             double scanRate, int scansPerRead);
 
@@ -57,17 +59,19 @@ void HardcodedConfigureStream(int handle)
 {
     enum
     {
-        NUM_FRAMES = 6
+        NUM_FRAMES = 8
     };
     const char *aNames[] = {"STREAM_TRIGGER_INDEX", "STREAM_CLOCK_SOURCE", "STREAM_RESOLUTION_INDEX",
-                            "STREAM_SETTLING_US", "AIN_ALL_RANGE", "AIN_ALL_NEGATIVE_CH"};
+                            "STREAM_SETTLING_US", "AIN_ALL_RANGE", "AIN_ALL_NEGATIVE_CH", "AIN2_RANGE", "AIN2_NEGATIVE_CH"};
 
     const double aValues[] = {0,
                               0,
                               4,
                               1000,
                               10,
-                              LJM_GND};
+                              LJM_GND,
+                              0.1,
+                              3};
 
     printf("Writing configurations:\n");
     WriteNamesOrDie(handle, NUM_FRAMES, aNames, aValues);
