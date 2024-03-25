@@ -120,7 +120,7 @@ void log(double *&aData, bool &running)
         }
 
         file << "\n";
-        std::this_thread::sleep_for(std::chrono::microseconds(10000));
+        std::this_thread::sleep_for(std::chrono::microseconds(1000));
     }
 
     file << "\n";
