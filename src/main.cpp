@@ -17,7 +17,7 @@
 /* Constants */
 int handle;
 double INIT_SCAN_RATE = 100;
-int SCANS_PER_READ = (int)INIT_SCAN_RATE / 2;
+int SCANS_PER_READ = 1;
 enum
 {
     NUM_CHANNELS = 2
@@ -36,7 +36,6 @@ const double aValues[] = {0, 0, 4, 1000,
 
 /* Signal handler for program quitting */
 bool interrupted = false;
-bool running = true;
 
 void signalHandler(int signum)
 {
@@ -44,7 +43,7 @@ void signalHandler(int signum)
 }
 
 /* Stream data from the LabJack and store result in aData */
-void Stream(int handle, double *&aData, bool &running)
+void Stream(int handle)
 {
     int err;
     int deviceScanBacklog = 0;
@@ -53,6 +52,10 @@ void Stream(int handle, double *&aData, bool &running)
     unsigned int receiveBufferBytesBacklog = 0;
     int connectionType;
     int *aScanList = new int[NUM_CHANNELS];
+    unsigned int aDataSize = NUM_CHANNELS * SCANS_PER_READ;
+    double *aData = new double[sizeof(double) * aDataSize];
+    memset(aData, 0, sizeof(double) * aDataSize);
+    std::ofstream file;
 
     err = LJM_GetHandleInfo(handle, NULL, &connectionType, NULL, NULL, NULL, NULL);
     ErrorCheck(err, "LJM_GetHandleInfo");
@@ -72,9 +75,12 @@ void Stream(int handle, double *&aData, bool &running)
            INIT_SCAN_RATE, INIT_SCAN_RATE * NUM_CHANNELS);
     printf("\n");
 
+    file.open("test_data.csv", std::ios::out | std::ios::app);
+    auto startTime = std::chrono::steady_clock::now();
+
     signal(SIGINT, signalHandler);
 
-    while (running)
+    while (!interrupted)
     {
         err = LJM_eStreamRead(handle, aData, &deviceScanBacklog,
                               &LJMScanBacklog);
@@ -91,23 +97,6 @@ void Stream(int handle, double *&aData, bool &running)
         printf("\n");
         printf("  1st scan out of %d:\n", SCANS_PER_READ);
 
-        running = !interrupted;
-    }
-
-    printf("Stopping stream\n");
-    err = LJM_eStreamStop(handle);
-    ErrorCheck(err, "Stopping stream");
-    delete[] aScanList;
-}
-
-void log(double *&aData, bool &running)
-{
-    std::ofstream file;
-    file.open("test_data.csv", std::ios::out | std::ios::app);
-    auto startTime = std::chrono::steady_clock::now();
-
-    while (running)
-    {
         auto currentTime = std::chrono::steady_clock::now() - startTime;
         auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime).count();
         file << millis << ", ";
@@ -120,36 +109,27 @@ void log(double *&aData, bool &running)
         }
 
         file << "\n";
-        std::this_thread::sleep_for(std::chrono::microseconds(10000));
     }
+
+    printf("Stopping stream\n");
+    err = LJM_eStreamStop(handle);
+    ErrorCheck(err, "Stopping stream");
 
     file << "\n";
     file.close();
+    delete[] aScanList;
+    delete[] aData;
 }
 
 int main()
 {
-
-    // Open first found LabJack
     handle = OpenOrDie(LJM_dtANY, LJM_ctANY, "LJM_idANY");
 
     PrintDeviceInfoFromHandle(handle);
     printf("\n");
 
-    unsigned int aDataSize = NUM_CHANNELS * SCANS_PER_READ;
-    double *aData = new double[sizeof(double) * aDataSize];
-    memset(aData, 0, sizeof(double) * aDataSize);
+    Stream(handle);
 
-    // Stream(handle, aData, running);
-    // log(aData, running);
-
-    std::thread read(Stream, handle, std::ref(aData), std::ref(running));
-    std::thread write(log, std::ref(aData), std::ref(running));
-
-    read.join();
-    write.join();
-
-    delete[] aData;
     CloseOrDie(handle);
     WaitForUserIfWindows();
 
