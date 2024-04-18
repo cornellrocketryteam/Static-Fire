@@ -75,7 +75,7 @@ void Stream(int handle)
            INIT_SCAN_RATE, INIT_SCAN_RATE * NUM_CHANNELS);
     printf("\n");
 
-    file.open("static_4_14.csv", std::ios::out | std::ios::app);
+    file.open("test_data.csv", std::ios::out | std::ios::app);
     auto startTime = std::chrono::steady_clock::now();
 
     signal(SIGINT, signalHandler);
